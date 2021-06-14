@@ -1,0 +1,6 @@
+{
+    "python.pythonPath": "/Users/alan/.local/share/virtualenvs/React_App-GUMGOWGi/bin/python",
+    "python.linting.pylintEnabled": false,
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true
+}
