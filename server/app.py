@@ -19,8 +19,22 @@ db = SQLAlchemy(app)
 # Init marshmallow
 ma = Marshmallow(app)
 
-# Task Class/Model
+class User(db.Model):
+    user_id = db.Column(db.String(100), primary_key=True)
+    user_pw = db.Column(db.String(100))
 
+    def __init__(self,user_id,user_pw):
+        self.user_id = user_id
+        self.user_pw = user_pw
+
+class UserSchema(ma.Schema):
+    class Meta:
+        fields = ('user_id', 'user_pw')
+
+user_schema = UserSchema()
+users_schema = UserSchema(many=True)
+
+# Task Class/Model
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,10 +70,10 @@ def get_all_tasks():
 # Create a Product
 @app.route('/task', methods=['POST'])
 def add_task():
+    user_id = request.json['user_id']
     task_name = request.json['task']
     is_completed = request.json['completed']
-    new_task = Task(task_name, is_completed)
-
+    new_task = Task(user_id,task_name, is_completed)
     db.session.add(new_task)
     db.session.commit()  # saves it to db
     return task_schema.jsonify(new_task)

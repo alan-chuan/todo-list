@@ -1,5 +1,5 @@
 import React from "react";
-const Form = ({ inputText, setInputText }) => {
+const TodoForm = ({id, inputText, setInputText }) => {
   const inputTextHandler = e => {
     setInputText(e.target.value);
   };
@@ -9,8 +9,8 @@ const Form = ({ inputText, setInputText }) => {
     fetch("http://localhost:5000/task", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ task: inputText, completed: false })
-    });
+      body: JSON.stringify({user_id:id, task: inputText, completed: false })
+    }).then(res=> console.log(res));
     console.log(inputText);
     setInputText("");
   };
@@ -30,4 +30,4 @@ const Form = ({ inputText, setInputText }) => {
   );
 };
 
-export default Form;
+export default TodoForm;
