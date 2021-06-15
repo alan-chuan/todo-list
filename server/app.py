@@ -19,36 +19,52 @@ db = SQLAlchemy(app)
 # Init marshmallow
 ma = Marshmallow(app)
 
+# to prevent "(sqlite3.OperationalError) no such table:" Errors
+# Run @app.before_first_request
+
+
+@app.before_first_request
+def create_tables():
+    db.create_all()
+
+
 class User(db.Model):
     user_id = db.Column(db.String(100), primary_key=True)
     user_pw = db.Column(db.String(100))
+    tasks = db.relationship('Task', backref='user', lazy=True)
 
-    def __init__(self,user_id,user_pw):
+    def __init__(self, user_id, user_pw):
         self.user_id = user_id
         self.user_pw = user_pw
+
 
 class UserSchema(ma.Schema):
     class Meta:
         fields = ('user_id', 'user_pw')
+
 
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
 # Task Class/Model
 
+
 class Task(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    task = db.Column(db.String(100), unique=True)
+    id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'user.user_id'), nullable=False, primary_key=True)
+    task = db.Column(db.String(100), primary_key=True)
     completed = db.Column(db.Boolean, default=False)
 
-    def __init__(self, task, completed):
+    def __init__(self, user_id, task, completed):
+        self.user_id = user_id
         self.task = task
         self.completed = completed
 
 
 class TaskSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'task', 'completed')
+        fields = ('user_id', 'id', 'task', 'completed')
 
 
 # Init schema
@@ -73,12 +89,14 @@ def add_task():
     user_id = request.json['user_id']
     task_name = request.json['task']
     is_completed = request.json['completed']
-    new_task = Task(user_id,task_name, is_completed)
+    new_task = Task(user_id, task_name, is_completed)
     db.session.add(new_task)
     db.session.commit()  # saves it to db
     return task_schema.jsonify(new_task)
 
 # Delete Product
+
+
 @app.route('/task/<id>', methods=['DELETE'])
 def delete_product(id):
     task = Task.query.get(id)
