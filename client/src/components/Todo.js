@@ -1,8 +1,8 @@
 import React from "react";
 
-const Todo = ({ todo, setTodos }) => {
+const Todo = ({ todo, setTodos, username }) => {
   const deleteHandler = () => {
-    fetch("http://localhost:5000/task/" + todo.id, { method: "DELETE" });
+    fetch("http://localhost:5000/"+ username + "/task/" + todo.id, { method: "DELETE" });
   };
   return (
     <div className="todo">

@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import UUID
 from flask_marshmallow import Marshmallow
 from flask_cors import CORS
 import os
@@ -29,18 +30,18 @@ def create_tables():
 
 
 class User(db.Model):
-    user_id = db.Column(db.String(100), primary_key=True)
+    username = db.Column(db.String(100), primary_key=True)
     user_pw = db.Column(db.String(100))
     tasks = db.relationship('Task', backref='user', lazy=True)
 
-    def __init__(self, user_id, user_pw):
-        self.user_id = user_id
+    def __init__(self, username, user_pw):
+        self.username = username
         self.user_pw = user_pw
 
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ('user_id', 'user_pw')
+        fields = ('username', 'user_pw')
 
 
 user_schema = UserSchema()
@@ -50,21 +51,22 @@ users_schema = UserSchema(many=True)
 
 
 class Task(db.Model):
-    id = db.Column(db.Integer)
-    user_id = db.Column(db.Integer, db.ForeignKey(
-        'user.user_id'), nullable=False, primary_key=True)
-    task = db.Column(db.String(100), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.Integer, db.ForeignKey(
+        'user.username'), nullable=False, primary_key=True)
+    task = db.Column(db.String(100))
     completed = db.Column(db.Boolean, default=False)
 
-    def __init__(self, user_id, task, completed):
-        self.user_id = user_id
+    def __init__(self, id, username, task, completed):
+        self.id = id
+        self.username = username
         self.task = task
         self.completed = completed
 
 
 class TaskSchema(ma.Schema):
     class Meta:
-        fields = ('user_id', 'id', 'task', 'completed')
+        fields = ('username', 'id', 'task', 'completed')
 
 
 # Init schema
@@ -86,10 +88,11 @@ def get_all_tasks():
 # Create a Product
 @app.route('/task', methods=['POST'])
 def add_task():
-    user_id = request.json['user_id']
+    task_id = request.json['task_id']
+    username = request.json['username']
     task_name = request.json['task']
     is_completed = request.json['completed']
-    new_task = Task(user_id, task_name, is_completed)
+    new_task = Task(task_id, username, task_name, is_completed)
     db.session.add(new_task)
     db.session.commit()  # saves it to db
     return task_schema.jsonify(new_task)
@@ -97,9 +100,9 @@ def add_task():
 # Delete Product
 
 
-@app.route('/task/<id>', methods=['DELETE'])
-def delete_product(id):
-    task = Task.query.get(id)
+@app.route('/<uname>/task/<task_id>', methods=['DELETE'])
+def delete_product(uname,task_id):
+    task = Task.query.get((task_id, uname))
     db.session.delete(task)
     db.session.commit()
     return task_schema.jsonify(task)
